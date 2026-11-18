@@ -1,7 +1,8 @@
+models/
 __pycache__/
 *.pyc
 *.mp4
 *.wav
 *.log
-.DS_Store
 parts.txt
+.DS_Store
