@@ -1,7 +1,15 @@
+import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageEnhance
 
-img = Image.open('bg_cine.png').convert('RGB').resize((1920, 1080), Image.LANCZOS)
+_ap = argparse.ArgumentParser(description="bloom + teal-orange grade + vignette")
+_ap.add_argument("--in", dest="src", default="bg_cine.png")
+_ap.add_argument("--out", dest="dst", default="bg_baked.png")
+_ap.add_argument("--width", type=int, default=1920)
+_ap.add_argument("--height", type=int, default=1080)
+_args, _ = _ap.parse_known_args()
+
+img = Image.open(_args.src).convert('RGB').resize((_args.width, _args.height), Image.LANCZOS)
 
 # --- bloom / halation on highlights ---
 arr = np.asarray(img).astype(np.float32) / 255.0
@@ -33,5 +41,5 @@ for r in range(int(W * 0.8), 0, -12):
 v = v.filter(ImageFilter.GaussianBlur(120))
 img = Image.composite(img, Image.new('RGB', (W, H), (2, 2, 3)), v)
 
-img.save('bg_baked.png')
-print('baked')
+img.save(_args.dst)
+print('baked ->', _args.dst)
