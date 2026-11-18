@@ -1,7 +1,14 @@
+import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
+
+_ap = argparse.ArgumentParser(description="procedural cinematic background")
+_ap.add_argument("--out", default="bg_motiv.png")
+_ap.add_argument("--width", type=int, default=2560)
+_ap.add_argument("--height", type=int, default=1440)
+_args, _ = _ap.parse_known_args()
 rng = np.random.default_rng(21)
-W, H = 2560, 1440
+W, H = _args.width, _args.height
 y = np.linspace(0, 1, H)[:, None]; x = np.linspace(0, 1, W)[None, :]
 
 # base: near black with a faint cool floor
@@ -72,5 +79,5 @@ img = Image.composite(img, Image.new('RGB', (W, H), (2, 2, 3)), v)
 
 arr = np.asarray(img).astype(np.int16) + rng.normal(0, 3.5, (H, W, 1)).repeat(3, axis=2)
 img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
-img.save('bg_motiv.png')
-print('bg ok')
+img.save(_args.out)
+print('bg ->', _args.out)
