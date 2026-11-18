@@ -38,13 +38,25 @@ WHITE = (255, 255, 255)
 # fonts
 # --------------------------------------------------------------------------- #
 _FONTS = {}
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_ASSETS = os.path.join(_HERE, "assets", "fonts")
+DEVANAGARI_FONTS = {
+    True: [os.path.join(_ASSETS, "NotoSansDevanagari-Bold.ttf"),
+           "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Bold.ttf",
+           os.path.join(_ASSETS, "Kalam-Bold.ttf")],
+    False: [os.path.join(_ASSETS, "NotoSansDevanagari-Regular.ttf"),
+            "/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf",
+            os.path.join(_ASSETS, "Kalam-Bold.ttf")],
+}
 
 
-def font(size, bold=True, bold_path=None, reg_path=None):
-    key = (size, bold)
+def font(size, bold=True, bold_path=None, reg_path=None, deva=False):
+    key = (size, bold, deva)
     if key in _FONTS:
         return _FONTS[key]
     candidates = []
+    if deva:
+        candidates += DEVANAGARI_FONTS[bold]
     if bold:
         candidates += [bold_path] if bold_path else []
         candidates += [
@@ -70,6 +82,14 @@ def font(size, bold=True, bold_path=None, reg_path=None):
         f = ImageFont.load_default()
     _FONTS[key] = f
     return f
+
+
+def has_devanagari(text):
+    return any("\u0900" <= ch <= "\u097F" for ch in text)
+
+
+def font_for(text, size, bold, bold_path=None, reg_path=None):
+    return font(size, bold, bold_path, reg_path, has_devanagari(text))
 
 
 # --------------------------------------------------------------------------- #
@@ -156,10 +176,11 @@ class SpotifyLyrics:
         self.accent = accent
         self.bp, self.rp = bold_path, reg_path
         s = w / 1920.0                                   # scale vs 1080p design
+        self.deva = any("\u0900" <= ch <= "\u097F" for _, _, txt in lines for ch in txt)
 
         self.f_title = font(int(40 * s), True, bold_path, reg_path)
         self.f_artist = font(int(30 * s), False, bold_path, reg_path)
-        self.f_time = font(int(21 * s), False, bold_path, reg_path)
+        self.f_time = font(int(21 * s), False, bold_path, reg_path, self.deva)
 
         self.card_x, self.card_y, self.card = int(150 * s), int(120 * s), int(600 * s)
         self.cx, self.cy = int(1370 * s), int(520 * s)
@@ -204,7 +225,7 @@ class SpotifyLyrics:
         tf, size = self.f_title, int(40 * s)
         while tf.getlength(title) > self.card - int(120 * s) and size > int(24 * s):
             size -= max(1, int(s))
-            tf = font(size, True, self.bp, self.rp)
+            tf = font_for(title, size, True, self.bp, self.rp)
         d.text((self.card_x, ty), title, font=tf, fill=WHITE)
         d.text((self.card_x, ty + int(56 * s)), artist, font=self.f_artist,
                fill=(150, 152, 164))
@@ -293,7 +314,7 @@ class SpotifyLyrics:
                 continue
             for lim, size, colour, key, bold in tiers:
                 if dist < lim:
-                    fnt = font(int(size * s), bold, self.bp, self.rp)
+                    fnt = font_for(text, int(size * s), bold, self.bp, self.rp)
                     y = self.cy + (j - scroll) * self.spacing - int(24 * s)
                     x = self.cx - fnt.getlength(text) / 2
                     self._put(img, text, fnt, colour, key, x, y)
