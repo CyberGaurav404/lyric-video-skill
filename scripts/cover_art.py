@@ -1,7 +1,15 @@
+import argparse
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+
+_ap = argparse.ArgumentParser(description="procedural album cover")
+_ap.add_argument("--out", default="cover.png")
+_ap.add_argument("--title", default="THE SPECTRE")
+_ap.add_argument("--artist", default="ALAN WALKER")
+_ap.add_argument("--size", type=int, default=1000)
+_args, _ = _ap.parse_known_args()
 rng = np.random.default_rng(11)
-S = 1000
+S = _args.size
 y = np.linspace(0, 1, S)[:, None]; x = np.linspace(0, 1, S)[None, :]
 
 # deep indigo -> near black radial
@@ -59,11 +67,11 @@ def spaced(text, y, fnt, fill, gap):
         d.text((xx, y), c, font=fnt, fill=fill)
         xx += fnt.getlength(c) + gap
 
-spaced('THE SPECTRE', S*0.78, font(74), (255, 255, 255), 6)
-spaced('ALAN WALKER', S*0.875, font(30, False), (170, 180, 205), 10)
+spaced(_args.title.upper()[:18], S*0.78, font(74), (255, 255, 255), 6)
+spaced(_args.artist.upper()[:24], S*0.875, font(30, False), (170, 180, 205), 10)
 
 # grain
 arr = np.asarray(img).astype(np.int16) + rng.normal(0, 3.0, (S, S, 1)).repeat(3, axis=2)
 img = Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8))
-img.save('cover_spectre.png')
-print('cover ok')
+img.save(_args.out)
+print('cover ->', _args.out)
